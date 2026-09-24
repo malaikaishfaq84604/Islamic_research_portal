@@ -1,0 +1,547 @@
+/* ==========================================================================
+   style.css - the portal's own styling
+   Bootstrap 5 does the heavy lifting (grid, cards, buttons). This file only
+   adds the things Bootstrap does not know about:
+     * the Arabic and Urdu fonts
+     * right-to-left text helpers
+     * the maroon and gold colour theme
+     * the card hover effect
+   Every class we invent starts with "ip-" (Islamic Portal) so it can never
+   clash with a Bootstrap class name.
+   ========================================================================== */
+
+
+/* --------------------------------------------------------------------------
+   1. COLOUR THEME - MAROON AND GOLD
+   CSS variables let us write the colour once and reuse it everywhere, so the
+   whole portal can be re-themed by editing this one block.
+
+   Maroon carries the structure (navbar, footer, headings, buttons) and gold
+   is the partner colour used for accents - the pairing traditionally found on
+   Qur'an bindings and mosque calligraphy.
+
+   Each colour below was checked for CONTRAST against the text placed on it,
+   using the WCAG AA rule (4.5:1 for normal text, 3:1 for large or bold text).
+   That is why there are three golds rather than one: bright gold is beautiful
+   as a stripe but too pale to put white words on, so a deeper gold does that
+   job instead.
+   -------------------------------------------------------------------------- */
+:root {
+    /* --- MAROON: the main colour ------------------------------------------ */
+    --ip-maroon-dark:  #4a0d1f;   /* navbar, footer, headings   (15.4:1 on white) */
+    --ip-maroon:       #7d1935;   /* buttons, badges            (10.2:1 on white) */
+    --ip-maroon-light: #f9edf0;   /* soft backgrounds                            */
+
+    /* --- GOLD: the partner colour ----------------------------------------- */
+    --ip-gold:         #c9a227;   /* bright: stripes and accents                 */
+    --ip-gold-mid:     #a67c0a;   /* deep enough to carry white bold text        */
+    --ip-gold-dark:    #7a5a06;   /* the hover state of the gold button          */
+
+    /* --- NEUTRALS --------------------------------------------------------- */
+    --ip-text:         #241a1d;   /* warm near-black body text                   */
+    --ip-page-bg:      #faf6f3;   /* warm off-white page background              */
+    --ip-border:       #ecdfe2;   /* card borders, tinted to match the theme     */
+
+    /* How far down the page the sticky navbar reaches. The search-result tab
+       strip (section 11) parks itself exactly underneath it. */
+    --ip-navbar-height: 56px;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. PAGE BASICS
+   -------------------------------------------------------------------------- */
+body {
+    background-color: var(--ip-page-bg);
+    color: var(--ip-text);
+    /* flex column + min-height keeps the footer at the bottom of short pages */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+footer {
+    margin-top: auto;   /* push the footer down */
+}
+
+
+/* --------------------------------------------------------------------------
+   3. ARABIC AND URDU TEXT
+   This is the most important part of the file for this project.
+
+   .arabic-text
+     - uses Amiri, a free Arabic font designed for the Qur'an
+     - dir="rtl" is set in the HTML so the words start on the RIGHT
+     - the large line-height stops diacritics (harakat) from being clipped
+   -------------------------------------------------------------------------- */
+.arabic-text {
+    font-family: 'Amiri', 'Traditional Arabic', 'Times New Roman', serif;
+    font-size: 1.6rem;
+    line-height: 2.4;          /* generous space so harakat are never cut off */
+    text-align: right;
+    direction: rtl;            /* right-to-left, the Arabic reading direction */
+    color: var(--ip-maroon-dark);
+    margin-bottom: 1rem;
+}
+
+/* Urdu uses the flowing Nastaliq script and also reads right-to-left. */
+.urdu-text {
+    font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Amiri', serif;
+    line-height: 2.2;
+    direction: rtl;
+}
+
+/* The translation under each verse - slightly larger than normal text. */
+.translation-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #4a3b3f;
+    margin-bottom: 0.75rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. NAVBAR AND FOOTER
+   -------------------------------------------------------------------------- */
+.ip-navbar {
+    background-color: var(--ip-maroon-dark);
+}
+
+.ip-navbar .navbar-brand {
+    letter-spacing: 0.3px;
+}
+
+.ip-footer {
+    background-color: var(--ip-maroon-dark);
+    color: #e9cfd6;
+}
+
+
+/* --------------------------------------------------------------------------
+   5. THE HERO / SEARCH AREA ON THE HOME PAGE
+   -------------------------------------------------------------------------- */
+.ip-hero {
+    background: linear-gradient(135deg, var(--ip-maroon-dark) 0%, var(--ip-maroon) 100%);
+    color: #ffffff;
+}
+
+.ip-hero-sub {
+    color: #e9cfd6;
+}
+
+.ip-btn-search {
+    background-color: var(--ip-gold-mid);
+    border-color: var(--ip-gold-mid);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.ip-btn-search:hover,
+.ip-btn-search:focus {
+    background-color: var(--ip-gold-dark);
+    border-color: var(--ip-gold-dark);
+    color: #ffffff;
+}
+
+/* The clickable example words under the search box. */
+.ip-example {
+    color: #ffe9a8;
+    text-decoration: none;
+    border-bottom: 1px dotted #ffe9a8;
+    margin: 0 0.35rem;
+}
+
+.ip-example:hover {
+    color: #ffffff;
+    border-bottom-color: #ffffff;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. SECTION HEADINGS ("Divine Command", "Prophetic Implementation")
+   -------------------------------------------------------------------------- */
+.ip-section-heading {
+    color: var(--ip-maroon-dark);
+    font-weight: 700;
+    border-bottom: 3px solid var(--ip-maroon-light);
+    padding-bottom: 0.5rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   7. CARDS
+   -------------------------------------------------------------------------- */
+
+/* A gold stripe down the side of every Qur'an verse card. */
+.ip-verse-card {
+    border-left: 4px solid var(--ip-gold);
+    background-color: #ffffff;
+}
+
+/* A maroon stripe down the side of every hadith card. */
+.ip-hadith-card {
+    border-left: 4px solid var(--ip-maroon);
+    background-color: #ffffff;
+}
+
+.ip-hadith-ref {
+    color: var(--ip-maroon-dark);
+}
+
+/* The clickable topic cards on the home page.
+   transition + transform gives a gentle "lift" when the mouse is over them. */
+.ip-topic-card {
+    border: 1px solid var(--ip-border);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    color: var(--ip-text);
+}
+
+.ip-topic-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.6rem 1.2rem rgba(74, 13, 31, 0.18) !important;
+    border-color: var(--ip-maroon);
+}
+
+.ip-topic-card .card-title {
+    color: var(--ip-maroon-dark);
+    font-size: 1.05rem;
+}
+
+/* The reference badge, e.g. "Surah Al-Baqara 2:43". */
+.ip-ref-badge {
+    background-color: var(--ip-maroon);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+/* The "12 hadith" counter on a topic card. */
+.ip-count-badge {
+    background-color: var(--ip-maroon-light);
+    color: var(--ip-maroon-dark);
+    font-weight: 600;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. THE TOPIC DETAIL PAGE HEADER
+   -------------------------------------------------------------------------- */
+.ip-topic-header {
+    background: linear-gradient(135deg, var(--ip-maroon-dark) 0%, var(--ip-maroon) 100%);
+    color: #ffffff;
+}
+
+.ip-topic-header h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+}
+
+.ip-topic-header h2 {
+    font-size: 1.5rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   9. EMPTY / ERROR CARDS AND THE SPINNER
+   -------------------------------------------------------------------------- */
+.ip-empty-card {
+    border: 1px dashed #dcc8ce;
+    background-color: #ffffff;
+}
+
+.ip-empty-icon {
+    font-size: 3rem;
+}
+
+.ip-error-code {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--ip-maroon);
+    line-height: 1;
+}
+
+.ip-spinner {
+    color: var(--ip-maroon);
+    width: 3rem;
+    height: 3rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   10. THE ADMIN COUNT TILES
+   -------------------------------------------------------------------------- */
+.ip-count-card {
+    border: 1px solid var(--ip-border);
+    background-color: #ffffff;
+}
+
+.ip-count-number {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ip-maroon-dark);
+}
+
+
+/* --------------------------------------------------------------------------
+   11. THE SEARCH RESULT TABS
+
+   WHY THIS SECTION EXISTS
+   The search results used to be one long stack: 21 verse cards, and only then
+   the hadith topic cards. Because an Arabic verse card is tall, the hadith sat
+   about two screens below the fold and most visitors never found them.
+
+   The results are now tabs. The rules below do the job the old layout failed
+   at - making it OBVIOUS, without any scrolling, that hadith are there too.
+   -------------------------------------------------------------------------- */
+
+/* The "Found 21 verses and 8 topics for Namaz" line above the tabs. */
+.ip-results-summary {
+    background-color: var(--ip-maroon-light);
+    border-left: 4px solid var(--ip-maroon);
+    border-radius: 0.375rem;
+    padding: 0.6rem 0.9rem;
+    color: var(--ip-maroon-dark);
+    font-size: 0.95rem;
+}
+
+.ip-results-check {
+    font-weight: 700;
+    color: var(--ip-maroon);
+}
+
+/* THE TAB STRIP.
+   position: sticky keeps it on screen while the reader scrolls through a long
+   verse list, so the way across to the hadith is never lost. It parks itself
+   directly under the navbar, which is itself sticky. */
+.ip-result-tabs {
+    position: sticky;
+    top: var(--ip-navbar-height);
+    z-index: 1020;              /* above the cards, below Bootstrap's modals */
+    background-color: var(--ip-page-bg);  /* matches the page, so cards do not show through */
+    border-bottom: 2px solid var(--ip-maroon-light);
+    padding-top: 0.25rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: nowrap;          /* never let a tab wrap onto a second line */
+    overflow-x: auto;           /* on a narrow phone the strip scrolls sideways */
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ip-result-tabs .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    color: #6b565c;
+    font-weight: 600;
+    padding: 0.7rem 1.1rem;
+}
+
+.ip-result-tabs .nav-link:hover {
+    color: var(--ip-maroon-dark);
+    background-color: var(--ip-maroon-light);
+    border-bottom-color: #dbb9c3;
+}
+
+/* The tab currently being read gets the maroon underline. */
+.ip-result-tabs .nav-link.active {
+    color: var(--ip-maroon-dark);
+    background-color: transparent;
+    border-bottom-color: var(--ip-maroon);
+}
+
+.ip-tab-icon {
+    font-size: 1.05rem;
+}
+
+/* THE COUNT BADGE - the single most important detail of this redesign.
+   It is what tells somebody reading the Qur'an tab that 8 hadith topics are
+   waiting one click away. */
+.ip-tab-count {
+    background-color: var(--ip-maroon-light);
+    color: var(--ip-maroon-dark);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+    min-width: 1.6rem;
+}
+
+/* On the tab NOT being read, the badge is filled in solid gold instead. An
+   unread tab should be the eye-catching one, because that is the tab the
+   reader does not yet know about.
+
+   The number is written in near-black rather than white: on a colour this
+   bright, white would only reach 2.4:1 contrast and the digits would be hard
+   to read, whereas dark brown reaches 5.4:1 - and it stands out more, which
+   is exactly what this badge is for. */
+.ip-result-tabs .nav-link:not(.active) .ip-tab-count {
+    background-color: var(--ip-gold);
+    color: #3d2f04;
+}
+
+
+/* --------------------------------------------------------------------------
+   12. THE "CONTINUE TO ..." BUTTON AT THE FOOT OF A TAB
+   For the reader who does scroll all the way down, this hands them on to the
+   next part of the answer instead of leaving them at a dead end.
+   -------------------------------------------------------------------------- */
+.ip-onward {
+    border-top: 1px dashed #dcc8ce;
+    padding-top: 1.25rem;
+}
+
+/* The house button: solid maroon with white text (10.2:1 contrast).
+   .ip-btn-maroon is the general-purpose version used on the admin page;
+   .ip-btn-onward is the same button with roomier padding. They share one
+   rule so the colour is only written once. */
+.ip-btn-maroon,
+.ip-btn-onward {
+    background-color: var(--ip-maroon);
+    border-color: var(--ip-maroon);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.ip-btn-maroon:hover,   .ip-btn-maroon:focus,
+.ip-btn-onward:hover,   .ip-btn-onward:focus {
+    background-color: var(--ip-maroon-dark);
+    border-color: var(--ip-maroon-dark);
+    color: #ffffff;
+}
+
+.ip-btn-onward {
+    padding: 0.6rem 1.4rem;
+}
+
+/* The outlined version, for the less important actions. */
+.ip-btn-maroon-outline {
+    background-color: transparent;
+    border-color: var(--ip-maroon);
+    color: var(--ip-maroon);
+    font-weight: 600;
+}
+
+.ip-btn-maroon-outline:hover,
+.ip-btn-maroon-outline:focus {
+    background-color: var(--ip-maroon);
+    border-color: var(--ip-maroon);
+    color: #ffffff;
+}
+
+/* The "8 topics - 192 narrations" promise inside that button. */
+.ip-onward-count {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Verses held back until "Show all N verses" is pressed. */
+.ip-verse-hidden {
+    display: none;
+}
+
+/* The "Read ->" hint on each topic card. */
+.ip-topic-go {
+    color: var(--ip-maroon);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+
+/* --------------------------------------------------------------------------
+   13. THE HADITH GRADE BADGES
+
+   These used to be Bootstrap's own bg-success (green), bg-primary (blue) and
+   bg-secondary (grey). Those three colours belong to Bootstrap's default
+   palette, not to ours, so on a maroon and gold page they looked like they
+   had wandered in from a different website.
+
+   They are now drawn from this theme instead, while still keeping the three
+   grades clearly APART from one another:
+
+       Sahih  - gold    : the strongest grade gets the most precious colour
+       Hasan  - maroon  : good, and the house colour
+       Da'if  - grey    : deliberately drab, because it is the weak grade
+       Unknown- outline : barely there, because nothing is being claimed
+
+   IMPORTANT: the colour is never the only clue. Every badge also spells out
+   its grade in words ("Sahih", "Hasan"), so a reader who cannot tell the
+   colours apart - roughly 1 man in 12 has some colour blindness - still gets
+   the full meaning from the label.
+   -------------------------------------------------------------------------- */
+.ip-grade {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+/* Gold, with near-black text. White on gold would only reach 2.4:1. */
+.ip-grade-sahih {
+    background-color: var(--ip-gold);
+    color: #3d2f04;
+}
+
+.ip-grade-hasan {
+    background-color: var(--ip-maroon);
+    color: #ffffff;
+}
+
+/* A warm grey, so it sits in the same family as the rest of the page. */
+.ip-grade-daif {
+    background-color: #8a7076;
+    color: #ffffff;
+}
+
+.ip-grade-unknown {
+    background-color: #ffffff;
+    color: #6b565c;
+    border: 1px solid var(--ip-border);
+}
+
+
+/* --------------------------------------------------------------------------
+   14. SMALL SCREENS (phones, 375px wide and similar)
+   Bootstrap's grid already stacks the cards into one column. We only shrink
+   the very large text so nothing overflows the screen edge.
+   -------------------------------------------------------------------------- */
+@media (max-width: 576px) {
+
+    .arabic-text {
+        font-size: 1.35rem;
+        line-height: 2.2;
+    }
+
+    .ip-hero h1 {
+        font-size: 1.8rem;
+    }
+
+    .ip-topic-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .ip-count-number {
+        font-size: 1.4rem;
+    }
+
+    /* Tighten the tabs so all three still fit across a narrow phone. */
+    .ip-result-tabs .nav-link {
+        padding: 0.6rem 0.7rem;
+        font-size: 0.9rem;
+    }
+
+    /* The icon is decoration; the words and the number matter more. */
+    .ip-tab-icon {
+        display: none;
+    }
+
+    /* Inside the onward button, put the promise on its own line so the
+       button does not run off the edge of the screen. */
+    .ip-onward-count {
+        display: block;
+        margin-top: 0.35rem;
+    }
+}
