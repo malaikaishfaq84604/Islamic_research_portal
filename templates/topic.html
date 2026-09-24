@@ -1,0 +1,161 @@
+{# ===========================================================================
+   topic.html - the detail page for ONE topic, e.g. /topic/4 for Ruku
+
+   This page shows ONLY the ahadith for the topic.
+
+   It deliberately does NOT repeat the "Divine Command" verses. By the time
+   somebody reaches this page they have already seen those verses on the
+   search results page, on its Qur'an tab - repeating them here just meant
+   scrolling past the same Arabic twice to reach the ahadith they clicked
+   for. This page answers one question: how did the Prophet do this?
+   =========================================================================== #}
+{% extends "base.html" %}
+
+{% block title %}{{ topic['topic_name'] }} &mdash; Islamic Research Portal{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+  {# Where "back" should lead. If the reader got here by searching, we send
+     them to the home page WITH that word in the address, so the search runs
+     again and their results - including the Qur'anic verses, which are not
+     on this page - are waiting for them. Otherwise it is just the home page. #}
+  {% if search_query %}
+    {% set back_link = url_for('home', lang=lang, q=search_query) %}
+  {% else %}
+    {% set back_link = url_for('home', lang=lang) %}
+  {% endif %}
+
+  <!-- ===================== BREADCRUMB ==================================== -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{{ back_link }}">Home</a>
+      </li>
+      {% if search_query %}
+        <li class="breadcrumb-item">
+          <a href="{{ back_link }}">Results for &ldquo;{{ search_query }}&rdquo;</a>
+        </li>
+      {% endif %}
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ topic['topic_name'] }}
+      </li>
+    </ol>
+  </nav>
+
+  <!-- ===================== TOPIC TITLE (both languages) ================== -->
+  <div class="ip-topic-header p-4 rounded mb-4">
+    <h1 class="mb-1">{{ topic['topic_name'] }}</h1>
+    <h2 class="urdu-text mb-2" dir="rtl">{{ topic['urdu_name'] }}</h2>
+    <p class="mb-0">{{ topic['description'] }}</p>
+  </div>
+
+  <!-- ===================== THE HADITHS ================================== -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+
+    <h3 class="ip-section-heading mb-0">Prophetic Implementation &#128747;</h3>
+
+    {# The grade filter switch. Changing it reloads the page with
+       ?grade=sahih_hasan so the SERVER does the filtering - simple to
+       understand and easy to test with pytest. #}
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch"
+             id="gradeSwitch"
+             {% if grade_filter == 'sahih_hasan' %}checked{% endif %}
+             onchange="toggleGradeFilter()">
+      <label class="form-check-label" for="gradeSwitch">
+        Show only Sahih &amp; Hasan
+      </label>
+    </div>
+
+  </div>
+
+  <p class="text-muted small mb-3">
+    {{ hadiths|length }} hadith(s) shown
+    {% if grade_filter == 'sahih_hasan' %}(filtered to Sahih &amp; Hasan){% endif %}
+  </p>
+
+  {% if hadiths %}
+    {% for hadith in hadiths %}
+      <div class="card mb-3 shadow-sm ip-hadith-card">
+        <div class="card-body">
+
+          {# Book name, hadith number and the grade badge on one line. #}
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+            <span class="fw-semibold ip-hadith-ref">
+              {{ hadith.book_name }} &mdash; Hadith {{ hadith.hadith_no }}
+            </span>
+
+            {# Badge colour depends on the grade, using this project's own
+               maroon-and-gold palette (see section 13 of style.css):
+               Sahih = gold, Hasan = maroon, Da'if = grey, Unknown = outline.
+               The grade is also written out in words, so the colour is never
+               the only thing carrying the meaning. #}
+            {% if hadith.grade == 'Sahih' %}
+              <span class="badge ip-grade ip-grade-sahih">Sahih</span>
+            {% elif hadith.grade == 'Hasan' %}
+              <span class="badge ip-grade ip-grade-hasan">Hasan</span>
+            {% elif hadith.grade == "Da'if" %}
+              <span class="badge ip-grade ip-grade-daif">Da&#39;if</span>
+            {% else %}
+              <span class="badge ip-grade ip-grade-unknown">Unknown</span>
+            {% endif %}
+          </div>
+
+          {# Arabic text, only if this hadith has it. #}
+          {% if hadith.arabic %}
+            <p class="arabic-text" dir="rtl">{{ hadith.arabic }}</p>
+          {% endif %}
+
+          {# The translation in the chosen language. #}
+          {% if hadith.translation %}
+            {% if lang == 'ur' %}
+              <p class="translation-text urdu-text text-end" dir="rtl">
+                {{ hadith.translation }}
+              </p>
+            {% else %}
+              <p class="translation-text" dir="ltr">{{ hadith.translation }}</p>
+            {% endif %}
+          {% endif %}
+
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-light border">
+      No ahadith match this filter. Try switching off the Sahih &amp; Hasan filter.
+    </div>
+  {% endif %}
+
+  <!-- ===================== BACK BUTTON =================================== -->
+  {# Named after where it actually goes. If the reader searched their way
+     here, this returns them to those results - Qur'anic verses included. #}
+  <a href="{{ back_link }}" class="btn ip-btn-maroon-outline mt-3">
+    {% if search_query %}
+      &larr; Back to results for &ldquo;{{ search_query }}&rdquo;
+    {% else %}
+      &larr; Back to Search
+    {% endif %}
+  </a>
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+// Reload this same page with (or without) the grade filter in the address.
+function toggleGradeFilter() {
+    var switchIsOn = document.getElementById('gradeSwitch').checked;
+    var url = new URL(window.location.href);
+
+    if (switchIsOn) {
+        url.searchParams.set('grade', 'sahih_hasan');
+    } else {
+        url.searchParams.set('grade', 'all');
+    }
+
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

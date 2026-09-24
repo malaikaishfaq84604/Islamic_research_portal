@@ -1,0 +1,186 @@
+{# ===========================================================================
+   base.html
+   ---------
+   The "skeleton" page. Every other template starts with
+       {% extends "base.html" %}
+   and then only fills in the {% block %} parts that are different.
+   This means the navbar and the styling are written once, not four times.
+   =========================================================================== #}
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+
+  {# THE MOST IMPORTANT LINE IN THE PROJECT.
+     charset="UTF-8" tells the browser to read the page as UTF-8. Without it
+     the browser guesses, and Arabic diacritics and Urdu turn into "Ø§Ù„Ø­" nonsense.
+     It is placed first so it is inside the first 1024 bytes, which is where
+     the browser stops looking for it. #}
+  <meta charset="UTF-8">
+
+  {# Makes the page fit properly on a phone instead of being zoomed out. #}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>{% block title %}Islamic Research Portal{% endblock %}</title>
+
+  {# ---------------------------------------------------------------------
+     EVERYTHING BELOW IS LOADED FROM THIS COMPUTER, NOT THE INTERNET.
+
+     Bootstrap and the two fonts are normally fetched from a CDN. We keep our
+     own copies in the static folder instead, so the portal looks and behaves
+     exactly the same with the Wi-Fi switched off - even on a computer that
+     has never opened it before. There is not one external address on this
+     page.
+     --------------------------------------------------------------------- #}
+
+  {# Bootstrap 5.3.3 - the grid, cards, badges and buttons. #}
+  <link rel="stylesheet"
+        href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+
+  {# Amiri (Arabic, for the Qur'an) and Noto Nastaliq Urdu (Urdu script).
+     Both are free under the SIL Open Font License. #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='fonts.css') }}">
+
+  {# Our own stylesheet. url_for('static', ...) builds the correct path for us. #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+
+{# ---------------------------------------------------------------------------
+   NAVBAR - shown on every page
+   --------------------------------------------------------------------------- #}
+<nav class="navbar navbar-expand-lg navbar-dark ip-navbar sticky-top">
+  <div class="container">
+
+    <a class="navbar-brand fw-bold" href="{{ url_for('home', lang=lang) }}">
+      &#9770; Islamic Research Portal
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#mainNav" aria-controls="mainNav"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('home', lang=lang) }}">Home</a>
+        </li>
+
+        {# --- The language dropdown (Urdu / English) --- #}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false" id="langDropdown">
+            {% if lang == 'ur' %}&#127760; اردو{% else %}&#127760; English{% endif %}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item" href="#" onclick="setLanguage('en'); return false;">
+                English
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item urdu-text" href="#" onclick="setLanguage('ur'); return false;">
+                اردو
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('admin', lang=lang) }}">Admin</a>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+{# ---------------------------------------------------------------------------
+   FLASH MESSAGES - short notes such as "Topic added" or "Wrong password"
+   --------------------------------------------------------------------------- #}
+<div class="container mt-3">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"
+                  aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
+{# ---------------------------------------------------------------------------
+   PAGE CONTENT - each child template fills this in
+   --------------------------------------------------------------------------- #}
+{% block content %}{% endblock %}
+
+{# ---------------------------------------------------------------------------
+   FOOTER
+   --------------------------------------------------------------------------- #}
+<footer class="ip-footer mt-5 py-4 text-center">
+  <div class="container">
+    <p class="mb-1">Islamic Research Portal &mdash; Final Year Project</p>
+    <p class="mb-0 small">
+      Case study: Namaz-e-Nabwi &#65018; &nbsp;&middot;&nbsp;
+      Works fully offline &nbsp;&middot;&nbsp;
+      Quran &amp; Hadith data stored locally in portal.db
+    </p>
+  </div>
+</footer>
+
+{# Bootstrap's JavaScript, needed for the language dropdown and the alert
+   close buttons. Our own copy again - no internet required. #}
+<script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+
+<script>
+// ---------------------------------------------------------------------------
+// LANGUAGE SWITCHING
+// The chosen language is kept in TWO places:
+//   1. the ?lang= part of the address, so the server knows which translation
+//      to send back;
+//   2. localStorage in the browser, so the choice survives when the user
+//      closes the tab and comes back later.
+// ---------------------------------------------------------------------------
+
+// Called when the user picks a language from the dropdown.
+function setLanguage(newLanguage) {
+    // Remember the choice inside the browser.
+    localStorage.setItem('portalLanguage', newLanguage);
+
+    // Rebuild the current address with the new ?lang= value and reload.
+    var url = new URL(window.location.href);
+    url.searchParams.set('lang', newLanguage);
+    window.location.href = url.toString();
+}
+
+// Runs once when the page has loaded.
+(function applySavedLanguage() {
+    var url = new URL(window.location.href);
+    var languageInAddress = url.searchParams.get('lang');
+    var savedLanguage = localStorage.getItem('portalLanguage');
+
+    // If the address has no ?lang= but the browser remembers one, apply it.
+    if (!languageInAddress && savedLanguage && savedLanguage !== 'en') {
+        url.searchParams.set('lang', savedLanguage);
+        window.location.replace(url.toString());
+        return;
+    }
+
+    // Otherwise keep the browser's memory in step with the address.
+    if (languageInAddress) {
+        localStorage.setItem('portalLanguage', languageInAddress);
+    }
+})();
+</script>
+
+{# Extra page-specific JavaScript goes here (used by index.html). #}
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

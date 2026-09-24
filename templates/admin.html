@@ -1,0 +1,228 @@
+{# ===========================================================================
+   admin.html - the password-protected admin area
+   Two completely different views live in this one file:
+     * logged_in is False -> just the password box
+     * logged_in is True  -> the counts, the refresh buttons and the forms
+   =========================================================================== #}
+{% extends "base.html" %}
+
+{% block title %}Admin &mdash; Islamic Research Portal{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+{% if not logged_in %}
+
+  <!-- ===================== THE PASSWORD FORM ============================= -->
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+          <h3 class="card-title text-center mb-1">&#128274; Admin Login</h3>
+          <p class="text-muted text-center small mb-4">
+            Please enter the admin password to continue
+          </p>
+
+          <form method="POST" action="{{ url_for('admin', lang=lang) }}">
+            {# The hidden "action" field tells app.py which job to do. #}
+            <input type="hidden" name="action" value="login">
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password"
+                     name="password" required autofocus>
+            </div>
+
+            <button type="submit" class="btn ip-btn-search w-100">Log In</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% else %}
+
+  <!-- ===================== THE ADMIN DASHBOARD ========================== -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <h2 class="mb-0">&#9881; Admin Dashboard</h2>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline-secondary btn-sm">
+      Log Out
+    </a>
+  </div>
+
+  <!-- --------------------- THE ROW COUNTS ------------------------------- -->
+  <h5 class="ip-section-heading mb-3">Database Contents</h5>
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3 mb-5">
+
+    <div class="col">
+      <div class="card text-center h-100 ip-count-card">
+        <div class="card-body">
+          <div class="ip-count-number">{{ counts.quran }}</div>
+          <div class="small text-muted">Qur&#39;an Ayahs</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card text-center h-100 ip-count-card">
+        <div class="card-body">
+          <div class="ip-count-number">{{ counts.hadith }}</div>
+          <div class="small text-muted">Hadiths</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card text-center h-100 ip-count-card">
+        <div class="card-body">
+          <div class="ip-count-number">{{ counts.topics }}</div>
+          <div class="small text-muted">Topics</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card text-center h-100 ip-count-card">
+        <div class="card-body">
+          <div class="ip-count-number">{{ counts.quran_topics }}</div>
+          <div class="small text-muted">Verse&ndash;Topic Links</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card text-center h-100 ip-count-card">
+        <div class="card-body">
+          <div class="ip-count-number">{{ counts.hadith_topics }}</div>
+          <div class="small text-muted">Hadith&ndash;Topic Links</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- --------------------- THE REFRESH BUTTONS -------------------------- -->
+  <h5 class="ip-section-heading mb-3">Re-sync Data</h5>
+  <div class="alert alert-warning small">
+    <strong>Note:</strong> these two buttons are the only part of the whole
+    portal that uses the internet, and they can take several minutes.
+    Existing rows are never duplicated (the database uses UNIQUE constraints).
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 mb-5">
+    <form method="POST" action="{{ url_for('admin', lang=lang) }}">
+      <input type="hidden" name="action" value="refresh_quran">
+      <button type="submit" class="btn ip-btn-maroon-outline">
+        &#8635; Refresh Qur&#39;an Data
+      </button>
+    </form>
+
+    <form method="POST" action="{{ url_for('admin', lang=lang) }}">
+      <input type="hidden" name="action" value="refresh_hadith">
+      <button type="submit" class="btn ip-btn-maroon-outline">
+        &#8635; Refresh Hadith Data
+      </button>
+    </form>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- --------------------- ADD A TOPIC -------------------------------- -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-3">&#10133; Add a New Topic</h5>
+
+          <form method="POST" action="{{ url_for('admin', lang=lang) }}">
+            <input type="hidden" name="action" value="add_topic">
+
+            <div class="mb-3">
+              <label for="topic_name" class="form-label">
+                Topic name (English)
+              </label>
+              <input type="text" class="form-control" id="topic_name"
+                     name="topic_name" placeholder="e.g. Qunoot (Supplication)"
+                     required>
+            </div>
+
+            <div class="mb-3">
+              <label for="urdu_name" class="form-label">Topic name (Urdu)</label>
+              <input type="text" class="form-control urdu-text" id="urdu_name"
+                     name="urdu_name" dir="rtl" placeholder="مثلاً قنوت">
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <input type="text" class="form-control" id="description"
+                     name="description"
+                     placeholder="A short explanation of this topic">
+            </div>
+
+            <button type="submit" class="btn ip-btn-search">Add Topic</button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- --------------------- MANUAL CURATION ---------------------------- -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title mb-1">&#128278; Attach / Detach a Hadith</h5>
+          <p class="text-muted small mb-3">
+            The automatic keyword tagging is not perfect. Use this form to fix
+            it by hand.
+          </p>
+
+          <form method="POST" action="{{ url_for('admin', lang=lang) }}">
+
+            <div class="mb-3">
+              <label for="book_name" class="form-label">Collection</label>
+              <select class="form-select" id="book_name" name="book_name" required>
+                {% for book in book_names %}
+                  <option value="{{ book }}">{{ book }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="hadith_no" class="form-label">Hadith number</label>
+              <input type="text" class="form-control" id="hadith_no"
+                     name="hadith_no" placeholder="e.g. 735" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="topic_id" class="form-label">Topic</label>
+              <select class="form-select" id="topic_id" name="topic_id" required>
+                {% for topic_row in all_topics %}
+                  <option value="{{ topic_row['topic_id'] }}">
+                    {{ topic_row['topic_name'] }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            {# Two submit buttons in ONE form. Each carries a different
+               "action" value, so app.py knows which one was pressed. #}
+            <div class="d-flex gap-2">
+              <button type="submit" name="action" value="attach_hadith"
+                      class="btn ip-btn-maroon">Attach</button>
+              <button type="submit" name="action" value="detach_hadith"
+                      class="btn btn-outline-danger">Detach</button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+{% endif %}
+
+</div>
+{% endblock %}

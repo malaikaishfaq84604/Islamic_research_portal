@@ -1,1 +1,594 @@
+{# ===========================================================================
+   index.html - the dashboard / home page
+   The search box lives here. When the user searches, JavaScript calls
+   /search and draws the results below WITHOUT reloading the page.
+   =========================================================================== #}
+{% extends "base.html" %}
 
+{% block title %}Islamic Research Portal &mdash; Search{% endblock %}
+
+{% block content %}
+
+<!-- ===================== HERO SECTION WITH THE SEARCH BOX ================= -->
+<section class="ip-hero text-center py-5">
+  <div class="container">
+
+    <h1 class="display-5 fw-bold mb-2">Islamic Research Portal</h1>
+    <p class="lead mb-1">
+      Search the Qur&#39;an and Hadith by topic &mdash; in English, Urdu or Roman Urdu
+    </p>
+    <p class="mb-4 small ip-hero-sub">
+      Case study: <strong>Namaz-e-Nabwi &#65018;</strong> &mdash; the Prophet&#39;s method of prayer
+    </p>
+
+    {# The form. onsubmit="...; return false;" stops the browser from
+       reloading the page, which is what makes the search feel instant. #}
+    <form class="row justify-content-center g-2"
+          onsubmit="runSearch(); return false;">
+
+      <div class="col-12 col-md-7 col-lg-6">
+        <input type="text" id="searchBox" class="form-control form-control-lg"
+               placeholder="Try: Namaz, Ruku, Sajdah, نماز, prayer ..."
+               autocomplete="off" autofocus>
+      </div>
+
+      <div class="col-auto">
+        <button type="submit" class="btn btn-lg ip-btn-search">
+          &#128269; Search
+        </button>
+      </div>
+    </form>
+
+    {# Quick-click examples so a demo needs no typing. #}
+    <div class="mt-3 small">
+      <span class="me-2 ip-hero-sub">Examples:</span>
+      <a href="#" class="ip-example" onclick="searchFor('Namaz'); return false;">Namaz</a>
+      <a href="#" class="ip-example" onclick="searchFor('نماز'); return false;">نماز</a>
+      <a href="#" class="ip-example" onclick="searchFor('Ruku'); return false;">Ruku</a>
+      <a href="#" class="ip-example" onclick="searchFor('Sajdah'); return false;">Sajdah</a>
+      <a href="#" class="ip-example" onclick="searchFor('prayer'); return false;">prayer</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===================== RESULTS AREA (filled in by JavaScript) =========== -->
+<div class="container my-4">
+
+  {# The spinner, hidden until a search is running. #}
+  <div id="spinner" class="text-center py-5 d-none">
+    <div class="spinner-border ip-spinner" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3 text-muted">Searching the database ...</p>
+  </div>
+
+  {# Everything the search finds is written into this empty div. #}
+  <div id="results"></div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+// ===========================================================================
+// SEARCH JAVASCRIPT
+// Plain vanilla JavaScript with fetch() - no jQuery, no frameworks.
+// ===========================================================================
+
+// The language currently chosen, handed down from Flask.
+var currentLanguage = "{{ lang }}";
+
+// The words the user actually searched for, remembered so the results
+// summary can say  Results for "Namaz".
+var lastSearchedWord = '';
+
+// A long search such as "Namaz" returns 21 verses. Showing all of them at
+// once is what pushed the hadith tabs off the bottom of the screen in the
+// first place, so we reveal the first few and offer a button for the rest.
+var VERSES_SHOWN_AT_FIRST = 5;
+
+
+// Put a word in the search box and search for it (used by the example links).
+function searchFor(word) {
+    document.getElementById('searchBox').value = word;
+    runSearch();
+}
+
+
+// Escape any characters that have a special meaning in HTML.
+// This stops text from the database being treated as HTML tags, which is the
+// browser-side twin of using ? placeholders in SQL.
+function escapeHtml(text) {
+    if (text === null || text === undefined) { return ''; }
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+
+// The main function: ask the server, then draw the answer.
+function runSearch() {
+    var keyword = document.getElementById('searchBox').value.trim();
+    var resultsBox = document.getElementById('results');
+    var spinner = document.getElementById('spinner');
+
+    // Nothing typed - say so and stop here.
+    if (keyword === '') {
+        resultsBox.innerHTML = buildNoResultsCard('Please type something to search for.');
+        return;
+    }
+
+    // Show the spinner and clear the old results.
+    lastSearchedWord = keyword;
+    spinner.classList.remove('d-none');
+    resultsBox.innerHTML = '';
+
+    // Build the address. encodeURIComponent makes Urdu text and symbols safe
+    // to put inside a web address.
+    var url = '/search?q=' + encodeURIComponent(keyword)
+            + '&lang=' + encodeURIComponent(currentLanguage);
+
+    fetch(url)
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            spinner.classList.add('d-none');
+            drawResults(data);
+        })
+        .catch(function (error) {
+            // Even if something goes wrong, the user sees a calm message.
+            spinner.classList.add('d-none');
+            resultsBox.innerHTML = buildNoResultsCard(
+                'Something went wrong while searching. Please try again.');
+        });
+}
+
+
+// Build the friendly "nothing found" card.
+function buildNoResultsCard(message) {
+    return ''
+      + '<div class="row justify-content-center">'
+      +   '<div class="col-12 col-md-8">'
+      +     '<div class="card text-center shadow-sm ip-empty-card">'
+      +       '<div class="card-body py-5">'
+      +         '<div class="ip-empty-icon">&#128269;</div>'
+      +         '<h4 class="card-title mt-3">No Results Found</h4>'
+      +         '<p class="text-muted mb-3">' + escapeHtml(message) + '</p>'
+      +         '<p class="mb-0">Try: <strong>Namaz</strong>, <strong>Ruku</strong>, '
+      +           '<strong>Sajdah</strong>, <strong>&#1606;&#1605;&#1575;&#1586;</strong> ...</p>'
+      +       '</div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>';
+}
+
+
+// ===========================================================================
+// DRAWING THE RESULTS
+//
+// THE PROBLEM THIS LAYOUT SOLVES
+// ------------------------------
+// The three kinds of result used to be stacked one under the other: every
+// Qur'anic verse first, then the hadith topic cards, then the hadiths.
+// A search for "Namaz" returns 21 verses, and each verse card is tall because
+// Arabic needs a large font and a generous line-height. That pushed the hadith
+// topic cards roughly two full screens BELOW the fold.
+//
+// The result was that most visitors never discovered them. They saw a wall of
+// ayahs, assumed that was the whole answer, and left - so the 192 ahadith
+// behind those topic cards, which are the heart of this project, were
+// effectively invisible.
+//
+// THE FIX
+// -------
+// The three kinds of result are now TABS instead of a stack:
+//
+//   1. Every tab is on screen immediately, with a count on it, so the reader
+//      can SEE "Hadith Topics 8" without scrolling a single pixel.
+//   2. A one-line summary above the tabs says what was found in plain words.
+//   3. The tab strip STICKS below the navbar while scrolling, so the way
+//      across to the hadith is never lost half-way down a long verse list.
+//   4. Only the first few verses are shown, with a button for the rest, so
+//      the page no longer opens as a wall of text.
+//   5. The Qur'an tab is the one that opens first, which keeps this project's
+//      "Divine Command -> Prophetic Implementation" argument in the right
+//      order, and it ENDS with a button carrying the reader to that next step
+//      for anyone who does read all the way down.
+// ===========================================================================
+
+
+// Turn the JSON from the server into HTML on the page.
+function drawResults(data) {
+    var resultsBox = document.getElementById('results');
+
+    // The server may not send every list (hadiths only come back for
+    // free-text searches), so default each one to an empty list to be safe.
+    var verses  = data.verses  || [];
+    var topics  = data.topics  || [];
+    var hadiths = data.hadiths || [];
+
+    // Nothing at all -> the friendly empty card.
+    if (verses.length === 0 && topics.length === 0 && hadiths.length === 0) {
+        resultsBox.innerHTML = buildNoResultsCard(
+            'We could not find that word in the portal.');
+        return;
+    }
+
+    // Collect only the sections that actually have something in them. Each
+    // one becomes a tab. Building a list first (rather than writing the tabs
+    // out by hand) means a search that finds just one kind of result does not
+    // end up with two empty tabs beside it.
+    var sections = [];
+
+    if (verses.length > 0) {
+        sections.push({
+            id:       'quran',
+            icon:     '&#128214;',                    // book
+            label:    'Qur&#39;an',
+            heading:  'Divine Command',
+            count:    verses.length,
+            countWord: verses.length === 1 ? 'verse' : 'verses',
+            body:     buildVersesHtml(verses)
+        });
+    }
+
+    if (topics.length > 0) {
+        // Add up the ahadith waiting behind the topic cards. "8 topics" is a
+        // vague promise; "8 topics, 192 narrations" tells the reader exactly
+        // how much they would be walking away from.
+        var totalHadith = 0;
+        for (var t = 0; t < topics.length; t++) {
+            totalHadith += (topics[t].hadith_count || 0);
+        }
+
+        sections.push({
+            id:        'topics',
+            icon:      '&#128747;',                   // mosque
+            label:     'Hadith Topics',
+            heading:   'Prophetic Implementation',
+            count:     topics.length,
+            countWord: topics.length === 1 ? 'topic' : 'topics',
+            extra:     totalHadith,
+            body:      buildTopicsHtml(topics, totalHadith)
+        });
+    }
+
+    if (hadiths.length > 0) {
+        sections.push({
+            id:        'hadith',
+            icon:      '&#128220;',                   // scroll
+            label:     'Hadith',
+            heading:   'From the Hadith',
+            count:     hadiths.length,
+            countWord: hadiths.length === 1 ? 'narration' : 'narrations',
+            body:      buildHadithsHtml(hadiths)
+        });
+    }
+
+    resultsBox.innerHTML = buildSummaryHtml(sections)
+                         + buildTabsHtml(sections);
+}
+
+
+// ---------------------------------------------------------------------------
+// THE SUMMARY LINE, above the tabs.
+// Says in plain words what the search found, so the reader knows the shape of
+// the answer before reading any of it.
+// ---------------------------------------------------------------------------
+function buildSummaryHtml(sections) {
+    var parts = [];
+    for (var i = 0; i < sections.length; i++) {
+        parts.push('<strong>' + sections[i].count + '</strong> '
+                 + sections[i].countWord);
+    }
+
+    // "21 verses and 8 topics"  /  "21 verses, 8 topics and 5 narrations"
+    var found;
+    if (parts.length === 1) {
+        found = parts[0];
+    } else {
+        found = parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+    }
+
+    return ''
+      + '<div class="ip-results-summary d-flex flex-wrap align-items-center '
+      +      'gap-2 mb-3">'
+      +   '<span class="ip-results-check">&#10003;</span>'
+      +   '<span>Found ' + found
+      +     (lastSearchedWord
+              ? ' for &ldquo;<strong>' + escapeHtml(lastSearchedWord) + '</strong>&rdquo;'
+              : '')
+      +   '</span>'
+      + '</div>';
+}
+
+
+// ---------------------------------------------------------------------------
+// THE TAB STRIP AND THE PANES BENEATH IT.
+//
+// Bootstrap's tab JavaScript listens on the document itself, not on each
+// button, so tabs built here AFTER the page has loaded still work with no
+// extra wiring from us.
+// ---------------------------------------------------------------------------
+function buildTabsHtml(sections) {
+    // Only one kind of result? Then a tab strip would be a row of one button,
+    // which looks broken. Show the section on its own with a plain heading.
+    if (sections.length === 1) {
+        return '<h3 class="ip-section-heading mb-3">' + sections[0].heading
+             + ' ' + sections[0].icon + '</h3>'
+             + sections[0].body;
+    }
+
+    var tabs = '<ul class="nav nav-tabs ip-result-tabs" role="tablist">';
+    var panes = '<div class="tab-content ip-tab-content">';
+
+    for (var i = 0; i < sections.length; i++) {
+        var s = sections[i];
+        var isFirst = (i === 0);
+
+        // The count badge is the whole point of this redesign: it is the bit
+        // that tells someone looking at the Qur'an tab that 8 hadith topics
+        // are waiting one click away.
+        tabs += '<li class="nav-item" role="presentation">'
+             +    '<button class="nav-link' + (isFirst ? ' active' : '') + '" '
+             +            'id="tab-' + s.id + '" '
+             +            'data-bs-toggle="tab" '
+             +            'data-bs-target="#pane-' + s.id + '" '
+             +            'type="button" role="tab" '
+             +            'aria-controls="pane-' + s.id + '" '
+             +            'aria-selected="' + (isFirst ? 'true' : 'false') + '">'
+             +      '<span class="ip-tab-icon">' + s.icon + '</span>'
+             +      '<span class="ip-tab-label">' + s.label + '</span>'
+             +      '<span class="badge ip-tab-count">' + s.count + '</span>'
+             +    '</button>'
+             +  '</li>';
+
+        // A reader who scrolls to the bottom of one tab should be carried
+        // forward, not dropped off a cliff. The last tab gets no button
+        // because there is nothing after it.
+        var onward = '';
+        if (i < sections.length - 1) {
+            onward = buildOnwardCta(sections[i + 1]);
+        }
+
+        panes += '<div class="tab-pane fade' + (isFirst ? ' show active' : '') + '" '
+              +       'id="pane-' + s.id + '" role="tabpanel" '
+              +       'aria-labelledby="tab-' + s.id + '" tabindex="0">'
+              +    s.body
+              +    onward
+              +  '</div>';
+    }
+
+    return tabs + '</ul>' + panes + '</div>';
+}
+
+
+// The "keep going" button at the foot of a tab.
+function buildOnwardCta(nextSection) {
+    var promise = nextSection.count + ' ' + nextSection.countWord;
+
+    // For the topics tab we can be far more persuasive by naming the number
+    // of ahadith rather than the number of cards.
+    if (nextSection.extra) {
+        promise = nextSection.count + ' ' + nextSection.countWord
+                + ' &middot; ' + nextSection.extra + ' narrations';
+    }
+
+    return ''
+      + '<div class="ip-onward text-center mt-4">'
+      +   '<p class="mb-2 text-muted small">Continue to the next part of the answer</p>'
+      +   '<button type="button" class="btn ip-btn-onward" '
+      +           'onclick="showTab(\'' + nextSection.id + '\')">'
+      +     nextSection.icon + ' ' + nextSection.heading
+      +     ' <span class="ip-onward-count">' + promise + '</span>'
+      +     ' &rarr;'
+      +   '</button>'
+      + '</div>';
+}
+
+
+// Switch to a tab from our own button, then bring the tab strip back into
+// view - otherwise the reader is left at the bottom of the new tab with no
+// idea the page changed above them.
+function showTab(sectionId) {
+    var button = document.getElementById('tab-' + sectionId);
+    if (!button) { return; }
+
+    bootstrap.Tab.getOrCreateInstance(button).show();
+
+    var strip = document.querySelector('.ip-result-tabs');
+    if (strip) {
+        strip.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// THE THREE KINDS OF CARD
+// ---------------------------------------------------------------------------
+
+// The Qur'anic verses. Only the first few are visible to begin with.
+function buildVersesHtml(verses) {
+    var isUrdu = (currentLanguage === 'ur');
+    var translationDirection = isUrdu ? 'rtl' : 'ltr';
+    var translationClass = isUrdu ? 'urdu-text text-end' : '';
+
+    var html = '<p class="text-muted small mb-3">'
+             + verses.length + ' verse(s) from the Holy Qur&#39;an</p>';
+
+    for (var i = 0; i < verses.length; i++) {
+        var verse = verses[i];
+
+        // Everything past the first few starts hidden. The cards are still
+        // built and still in the page, so revealing them needs no second trip
+        // to the server - just the removal of one class.
+        var hiddenClass = (i >= VERSES_SHOWN_AT_FIRST) ? ' ip-verse-hidden' : '';
+
+        html += '<div class="card mb-3 shadow-sm ip-verse-card' + hiddenClass + '">'
+             +    '<div class="card-body">'
+             +      '<p class="arabic-text" dir="rtl">'
+             +          escapeHtml(verse.arabic) + '</p>'
+             +      '<p class="translation-text ' + translationClass + '" dir="'
+             +          translationDirection + '">'
+             +          escapeHtml(verse.translation) + '</p>'
+             +      '<span class="badge ip-ref-badge">Surah '
+             +          escapeHtml(verse.surah_name) + ' '
+             +          verse.surah_no + ':' + verse.ayah_no + '</span>'
+             +    '</div>'
+             +  '</div>';
+    }
+
+    if (verses.length > VERSES_SHOWN_AT_FIRST) {
+        html += '<div class="text-center mb-2">'
+             +    '<button type="button" class="btn btn-outline-secondary btn-sm" '
+             +            'id="showAllVersesBtn" onclick="showAllVerses()">'
+             +      'Show all ' + verses.length + ' verses &#9662;'
+             +    '</button>'
+             +  '</div>';
+    }
+
+    return html;
+}
+
+
+// Reveal the verses that were held back, then retire the button.
+function showAllVerses() {
+    var hidden = document.querySelectorAll('.ip-verse-hidden');
+    for (var i = 0; i < hidden.length; i++) {
+        hidden[i].classList.remove('ip-verse-hidden');
+    }
+
+    // The button has done its job - take it away, along with the little div
+    // that centres it, so no empty gap is left behind.
+    var button = document.getElementById('showAllVersesBtn');
+    if (button && button.parentNode) {
+        button.parentNode.remove();
+    }
+}
+
+
+// The clickable topic cards - the doorway to the ahadith.
+function buildTopicsHtml(topics, totalHadith) {
+    var html = '<p class="text-muted small mb-3">'
+             + 'These ' + topics.length + ' topics hold <strong>'
+             + totalHadith + '</strong> narrations in total. '
+             + 'Click any topic to read them.</p>';
+
+    // Bootstrap grid: 1 card per row on a phone, 2 on a tablet, 4 on a laptop.
+    html += '<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3">';
+
+    for (var j = 0; j < topics.length; j++) {
+        var topic = topics[j];
+
+        // Carry the searched word along in the address. The topic page has no
+        // verses on it any more, so its "Back to Search" link uses this to
+        // bring the reader back to THIS result set - Qur'an tab and all -
+        // instead of dumping them at an empty search box.
+        var topicLink = '/topic/' + topic.topic_id
+                      + '?lang=' + encodeURIComponent(currentLanguage)
+                      + '&q=' + encodeURIComponent(lastSearchedWord);
+
+        html += '<div class="col">'
+             +    '<a href="' + topicLink + '" class="text-decoration-none">'
+             +      '<div class="card h-100 shadow-sm ip-topic-card">'
+             +        '<div class="card-body d-flex flex-column">'
+             +          '<h5 class="card-title">'
+             +              escapeHtml(topic.topic_name) + '</h5>'
+             +          '<p class="urdu-text mb-3" dir="rtl">'
+             +              escapeHtml(topic.urdu_name) + '</p>'
+             +          '<div class="mt-auto d-flex justify-content-between '
+             +               'align-items-center">'
+             +            '<span class="badge ip-count-badge">'
+             +                topic.hadith_count + ' hadith</span>'
+             +            '<span class="ip-topic-go">Read &rarr;</span>'
+             +          '</div>'
+             +        '</div>'
+             +      '</div>'
+             +    '</a>'
+             +  '</div>';
+    }
+
+    return html + '</div>';
+}
+
+
+// Direct hadith matches - only used by the free-text search.
+function buildHadithsHtml(hadiths) {
+    var isUrdu = (currentLanguage === 'ur');
+
+    var html = '<p class="text-muted small mb-3">'
+             + 'Showing the first ' + hadiths.length
+             + ' narration(s) that mention this word, strongest grade first</p>';
+
+    for (var k = 0; k < hadiths.length; k++) {
+        var hadith = hadiths[k];
+
+        // Pick the badge colour to match the grade, using this project's own
+        // maroon-and-gold palette (see section 13 of style.css). The grade is
+        // also written out in words below, so the colour is never the only
+        // thing carrying the meaning.
+        var badgeClass = 'ip-grade ip-grade-unknown';
+        if (hadith.grade === 'Sahih')      { badgeClass = 'ip-grade ip-grade-sahih'; }
+        else if (hadith.grade === 'Hasan') { badgeClass = 'ip-grade ip-grade-hasan'; }
+        else if (hadith.grade === "Da'if") { badgeClass = 'ip-grade ip-grade-daif'; }
+
+        html += '<div class="card mb-3 shadow-sm ip-hadith-card">'
+             +    '<div class="card-body">'
+             +      '<div class="d-flex flex-wrap justify-content-between '
+             +           'align-items-center mb-2 gap-2">'
+             +        '<span class="fw-semibold ip-hadith-ref">'
+             +            escapeHtml(hadith.book_name) + ' &mdash; Hadith '
+             +            escapeHtml(hadith.hadith_no) + '</span>'
+             +        '<span class="badge ' + badgeClass + '">'
+             +            escapeHtml(hadith.grade) + '</span>'
+             +      '</div>';
+
+        if (hadith.arabic) {
+            html += '<p class="arabic-text" dir="rtl">'
+                 +      escapeHtml(hadith.arabic) + '</p>';
+        }
+
+        if (hadith.translation) {
+            html += '<p class="translation-text '
+                 +      (isUrdu ? 'urdu-text text-end' : '') + '" dir="'
+                 +      (isUrdu ? 'rtl' : 'ltr') + '">'
+                 +      escapeHtml(hadith.translation) + '</p>';
+        }
+
+        html +=   '</div>'
+             +  '</div>';
+    }
+
+    return html;
+}
+
+
+// ---------------------------------------------------------------------------
+// COMING BACK FROM A TOPIC PAGE
+//
+// The topic pages show only ahadith - the Qur'anic verses live here, on the
+// search results. So when somebody presses "Back to Search" on a topic page,
+// the address carries the word they originally searched for (?q=Namaz) and we
+// run that search again immediately.
+//
+// Without this the reader would land on an empty box and have to remember and
+// retype what they were looking at, which is exactly the kind of dead end the
+// tabbed results were meant to remove.
+//
+// This runs last, once every function above has been defined.
+// ---------------------------------------------------------------------------
+(function searchAgainIfTheAddressAsksForIt() {
+    var wordInAddress = new URL(window.location.href).searchParams.get('q');
+
+    if (wordInAddress) {
+        document.getElementById('searchBox').value = wordInAddress;
+        runSearch();
+    }
+})();
+</script>
+{% endblock %}
