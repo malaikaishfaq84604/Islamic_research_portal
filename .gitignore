@@ -1,0 +1,48 @@
+# ===========================================================================
+# .gitignore - files that should NEVER be copied into a Git repository.
+# ===========================================================================
+
+# Python's compiled bytecode cache. Rebuilt automatically, never useful to
+# keep, and it makes the repository messy.
+__pycache__/
+*.py[cod]
+
+# Virtual environments, if you ever make one.
+venv/
+.venv/
+env/
+
+# Editor and operating-system clutter.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test and coverage leftovers.
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ---------------------------------------------------------------------------
+# SECRETS - never commit these.
+#
+# The portal reads PORTAL_ADMIN_PASSWORD and PORTAL_SECRET_KEY from the
+# environment (see config.py). If you keep them in a local .env file for
+# convenience, that file must stay off GitHub.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# A NOTE ABOUT portal.db - DELIBERATELY IGNORED
+#
+# portal.db is ~70 MB (the ingested Quran/hadith corpus - no user data). That
+# is far too large to push over a slow connection: GitHub's edge server times
+# the upload out with HTTP 408. It is therefore kept out of Git.
+#
+# It still lives on disk next to the app, and the host gets it by hand:
+# zip the project folder and upload it on the PythonAnywhere Files tab
+# (see DEPLOY.md).
+# ---------------------------------------------------------------------------
+portal.db
